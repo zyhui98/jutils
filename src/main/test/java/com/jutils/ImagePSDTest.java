@@ -79,12 +79,8 @@ public class ImagePSDTest{
                 // ...
 
                 // Finally read the image, using settings from param
-                BufferedImage image = reader.read(0, param);
-                OutputStream outImage = new FileOutputStream(  "56-1.png");
-                JPEGImageEncoder enc = JPEGCodec.createJPEGEncoder(outImage);
-                enc.encode(image);
-                outImage.flush();
-                outImage.close();
+                BufferedImage image = reader.read(3, param);
+                ImageIO.write(image, "png", new FileOutputStream("56-1.png"));
 
 
                 // Optionally, read thumbnails, meta data, etc...
