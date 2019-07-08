@@ -1,17 +1,25 @@
 package com.jutils;
 
+import cn.hutool.json.JSON;
+import cn.hutool.json.JSONObject;
+import cn.hutool.json.JSONUtil;
 import com.sun.image.codec.jpeg.JPEGCodec;
 import com.sun.image.codec.jpeg.JPEGImageEncoder;
 import com.twelvemonkeys.imageio.plugins.psd.PSDImageReader;
 import com.twelvemonkeys.imageio.plugins.psd.PSDImageReaderSpi;
+import com.twelvemonkeys.imageio.plugins.psd.PSDMetadata;
 import com.twelvemonkeys.imageio.stream.URLImageInputStreamSpi;
 import org.junit.Test;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReadParam;
 import javax.imageio.ImageReader;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.imageio.metadata.IIOMetadata;
+import javax.imageio.metadata.IIOMetadataNode;
 import javax.imageio.spi.IIORegistry;
 import javax.imageio.spi.ImageReaderSpi;
 import javax.imageio.stream.ImageInputStream;
@@ -39,65 +47,70 @@ import static org.junit.Assert.assertNotNull;
  * @author: zhuyh
  * @date: 2018/8/17
  */
-public class ImagePSDTest{
-    static {
-        IIORegistry.getDefaultInstance().registerServiceProvider(new URLImageInputStreamSpi());
-        ImageIO.setUseCache(false);
+public class ImagePSDTest extends ImageReaderAbstractTest<PSDImageReader> {
+    private static final PSDImageReaderSpi provider = new PSDImageReaderSpi();
+
+    @Test
+    public void test() throws IOException {
+
+        PSDImageReader imageReader = createReader();
+
+        try (ImageInputStream stream = ImageIO.createImageInputStream(getClassLoaderResource("/弹窗.psd"))) {
+            imageReader.setInput(stream);
+
+            IIOMetadata metadata = imageReader.getImageMetadata(0);
+            IIOMetadataNode root = (IIOMetadataNode) metadata.getAsTree(PSDMetadata.NATIVE_METADATA_FORMAT_NAME);
+            NodeList layerInfo = root.getElementsByTagName("LayerInfo");
+            for(int i=0;i<layerInfo.getLength();i++){
+                System.out.print("|" + ((IIOMetadataNode) layerInfo.item(i)).getAttribute("name"));
+                System.out.print("|" + ((IIOMetadataNode) layerInfo.item(i)).getAttribute("top"));
+                System.out.print("|" + ((IIOMetadataNode) layerInfo.item(i)).getAttribute("left"));
+                System.out.print("|" + ((IIOMetadataNode) layerInfo.item(i)).getAttribute("bottom"));
+                System.out.println();
+
+            }
+            assertEquals(4, layerInfo.getLength()); // Sanity
+
+        }
     }
-    public static void main(String[] args) throws IOException {
 
+    @Override
+    protected List<TestData> getTestData() {
+        return null;
+    }
 
-        // Create input stream
-        ImageInputStream input = null;
+    @Override
+    protected ImageReaderSpi createProvider() {
+        return null;
+    }
+
+    @Override
+    protected Class<PSDImageReader> getReaderClass() {
+        return PSDImageReader.class;
+    }
+
+    @Override
+    protected PSDImageReader createReader() {
         try {
-            input = ImageIO.createImageInputStream(ImagePSDTest.class.getResource("/image/56.psd"));
-        } catch (IOException e) {
+           return (PSDImageReader)provider.createReaderInstance(null);
+        } catch (Exception e) {
             e.printStackTrace();
         }
+        return null;
+    }
 
-        try {
-            // Get the reader
-            Iterator<ImageReader> readers = ImageIO.getImageReaders(input);
+    @Override
+    protected List<String> getFormatNames() {
+        return null;
+    }
 
-            if (!readers.hasNext()) {
-                throw new IllegalArgumentException("No reader for: " );
-            }
+    @Override
+    protected List<String> getSuffixes() {
+        return null;
+    }
 
-            ImageReader reader = readers.next();
-
-            try {
-                reader.setInput(input);
-
-                // Optionally, listen for read warnings, progress, etc.
-
-                ImageReadParam param = reader.getDefaultReadParam();
-
-                // Optionally, control read settings like sub sampling, source region or destination etc.
-//                param.setSourceSubsampling(...);
-//                param.setSourceRegion(...);
-//                param.setDestination(...);
-                // ...
-
-                // Finally read the image, using settings from param
-                BufferedImage image = reader.read(3, param);
-                ImageIO.write(image, "png", new FileOutputStream("56-1.png"));
-
-
-                // Optionally, read thumbnails, meta data, etc...
-                int numThumbs = reader.getNumImages(false);
-                System.out.println("numThumbs:"+numThumbs);
-                // ...
-            }
-            finally {
-                // Dispose reader in finally block to avoid memory leaks
-                reader.dispose();
-            }
-        }
-        finally {
-            // Close stream in finally block to avoid resource leaks
-            input.close();
-        }
-
-
+    @Override
+    protected List<String> getMIMETypes() {
+        return null;
     }
 }
